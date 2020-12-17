@@ -29,7 +29,7 @@ import numpy as np
 from random import random, randrange, randint, shuffle, choice
 
 from transformer.tokenization import BertTokenizer
-
+# from transformers import BertTokenizer
 
 # This is used for running on Huawei Cloud.
 oncloud = True
@@ -310,13 +310,13 @@ def create_instances_from_document(
 def create_training_file(docs, vocab_list, args, epoch_num, bi_text=True):
     epoch_filename = args.output_dir / "epoch_{}.json".format(epoch_num)
     num_instances = 0
-    with epoch_filename.open('w') as epoch_file:
+    with epoch_filename.open('w', encoding='utf8') as epoch_file:
         for doc_idx in trange(len(docs), desc="Document"):
             doc_instances = create_instances_from_document(
                 docs, doc_idx, max_seq_length=args.max_seq_len, short_seq_prob=args.short_seq_prob,
                 masked_lm_prob=args.masked_lm_prob, max_predictions_per_seq=args.max_predictions_per_seq,
                 whole_word_mask=args.do_whole_word_mask, vocab_list=vocab_list, bi_text=bi_text)
-            doc_instances = [json.dumps(instance) for instance in doc_instances]
+            doc_instances = [json.dumps(instance, ensure_ascii=False) for instance in doc_instances]
             for instance in doc_instances:
                 epoch_file.write(instance + '\n')
                 num_instances += 1
@@ -326,7 +326,7 @@ def create_training_file(docs, vocab_list, args, epoch_num, bi_text=True):
             "num_training_examples": num_instances,
             "max_seq_len": args.max_seq_len
         }
-        metrics_file.write(json.dumps(metrics))
+        metrics_file.write(json.dumps(metrics, ensure_ascii=False))
 
     return epoch_filename, metrics_filename
 
@@ -365,7 +365,7 @@ def main():
     vocab_list = list(tokenizer.vocab.keys())
     doc_num = 0
     with DocumentDatabase(reduce_memory=args.reduce_memory) as docs:
-        with args.train_corpus.open() as f:
+        with args.train_corpus.open(encoding='utf8') as f:
             doc = []
             for line in tqdm(f, desc="Loading Dataset", unit=" lines"):
                 line = line.strip()
